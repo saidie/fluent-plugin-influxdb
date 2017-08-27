@@ -38,6 +38,8 @@ DESC
                :desc => "Use SSL when connecting to influxDB."
   config_param :verify_ssl, :bool, :default => true,
                :desc => "Enable/Disable SSL Certs verification when connecting to influxDB via SSL."
+  config_param :tag_key, :string, default: '',
+               desc: "The name of the field to use as influxDB tags."
   config_param :auto_tags, :bool, :default => false,
                :desc => "Enable/Disable auto-tagging behaviour which makes strings tags."
   config_param :tag_keys, :array, :default => [],
@@ -110,9 +112,12 @@ DESC
     points = []
     chunk.msgpack_each do |tag, time, record|
       timestamp = record.delete(@time_key) || time
-      if tag_keys.empty? && !@auto_tags
+      if @tag_key.empty? && tag_keys.empty? && !@auto_tags
         values = record
         tags = {}
+      elsif !@tag_key.empty?
+        values = record
+        tags = record.delete(@tag_key) || {}
       else
         values = {}
         tags = {}
